@@ -6,4 +6,4 @@ variable "bastion_cidrs" {}
 variable "subnets" {}
 variable "instance_type" {}
 variable "route53_zone_id" {}
-
+variable "kms" {}
