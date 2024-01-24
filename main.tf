@@ -36,6 +36,7 @@ resource "aws_instance" "main" {
   vpc_security_group_ids = [aws_security_group.main.id]
   subnet_id              = var.subnets[0]
   tags                   = merge(var.tags, { Name = local.name })
+  iam_instance_profile   = aws_iam_instance_profile.main.name
 
   root_block_device {
     volume_size           = 10
