@@ -50,6 +50,75 @@ resource "aws_instance" "main" {
   }))
 }
 
+resource "aws_iam_role" "main" {
+  name = local.name
+  tags = merge(var.tags, { Name = local.name })
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  inline_policy {
+    name = "SSM-Read-Access"
+
+    policy = jsonencode({
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Sid" : "GetResources",
+          "Effect" : "Allow",
+          "Action" : [
+            "ssm:GetParameterHistory",
+            "ssm:GetParametersByPath",
+            "ssm:GetParameters",
+            "ssm:GetParameter"
+          ],
+          "Resource" : [
+            "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.${local.project_name}.rabbitmq.*"
+          ]
+        },
+        {
+          "Sid" : "ListResources",
+          "Effect" : "Allow",
+          "Action" : "ssm:DescribeParameters",
+          "Resource" : "*"
+        },
+        {
+          "Sid" : "S3UploadForPrometheusAlerts",
+          "Effect" : "Allow",
+          "Action" : [
+            "s3:GetObject",
+            "s3:ListBucket",
+            "s3:PutObject",
+            "s3:DeleteObjectVersion",
+            "s3:DeleteObject"
+          ],
+          "Resource" : [
+            "arn:aws:s3:::d76-prometheus-alert-rules/*",
+            "arn:aws:s3:::d76-prometheus-alert-rules"
+          ]
+        }
+      ]
+    })
+  }
+
+}
+
+resource "aws_iam_instance_profile" "main" {
+  name = local.name
+  role = aws_iam_role.main.name
+}
+
 resource "aws_route53_record" "main" {
   name    = "rabbitmq-${var.env}"
   type    = "CNAME"
